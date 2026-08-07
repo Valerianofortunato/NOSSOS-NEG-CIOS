@@ -1,0 +1,6 @@
+{
+  "name": "Nossos Negócios",
+  "description": "Plataforma de intermediação de negócios em Angola de forma direta, simples e intuitiva. Gerencie subscrições Profissionais e Empresariais, destaque anúncios com selos de verificação e realize pagamentos de forma direta.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
