@@ -1,51 +1,38 @@
 import { createClient } from '@supabase/supabase-js';
 
-let rawUrl = import.meta.env.VITE_SUPABASE_URL || 'https://jnhumavmdjyzfxbklqjh.supabase.co';
-// Clean trailing rest/v1/ if present to get project root URL
-if (rawUrl.endsWith('/rest/v1/')) {
-  rawUrl = rawUrl.replace(/\/rest\/v1\/?$/, '');
-} else if (rawUrl.endsWith('/rest/v1')) {
-  rawUrl = rawUrl.replace(/\/rest\/v1$/, '');
-}
-
-const supabaseUrl = rawUrl;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_mUh8xL256IUQoYpMp9o8Aw_OpBS9LYm';
+/**
+ * Single Supabase client used by the whole application.
+ *
+ * The application must receive these values from Vite environment variables.
+ * We intentionally do not silently fall back to a hard-coded project/key: a
+ * missing configuration should fail fast instead of creating confusing local
+ * or network-fallback behaviour.
+ */
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL?.trim();
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY?.trim();
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn('Supabase URL or Anon Key is missing. Please ensure environment variables are configured.');
+  throw new Error(
+    'Configuração do Supabase em falta. Defina VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY nas variáveis de ambiente.'
+  );
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+if (!/^https:\/\/[a-z0-9-]+\.supabase\.co(?:\/)?$/i.test(supabaseUrl)) {
+  throw new Error(
+    'VITE_SUPABASE_URL inválida. Use a URL raiz do projeto Supabase, por exemplo https://seu-projeto.supabase.co.'
+  );
+}
+
+export const supabase = createClient(supabaseUrl.replace(/\/$/, ''), supabaseAnonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
-    detectSessionInUrl: true
+    detectSessionInUrl: true,
+    flowType: 'pkce'
   },
   global: {
-    fetch: async (url, options) => {
-      try {
-        return await fetch(url, options);
-      } catch (err: any) {
-        console.warn("Supabase network unavailable, falling back to local storage:", err?.message || err);
-        const isNetworkError = err && (
-          err.name === 'TypeError' ||
-          String(err).includes('Failed to fetch') ||
-          String(err).includes('NetworkError')
-        );
-        if (isNetworkError) {
-          return new Response(
-            JSON.stringify({
-              error: 'NETWORK_ERROR',
-              message: 'Conexão de rede indisponível ou projeto Supabase offline.'
-            }),
-            {
-              status: 503,
-              headers: { 'Content-Type': 'application/json' }
-            }
-          );
-        }
-        throw err;
-      }
+    headers: {
+      'X-Client-Info': 'nossos-negocios'
     }
   }
 });
