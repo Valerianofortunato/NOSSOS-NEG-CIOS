@@ -2,6 +2,9 @@ import {StrictMode} from 'react';
 import {createRoot} from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
+import { installRealSupabaseAuth } from './services/AuthBootstrap';
+
+installRealSupabaseAuth();
 
 // Intercept network-related unhandled promise rejections and errors in offline/sandboxed environments
 if (typeof window !== 'undefined') {
