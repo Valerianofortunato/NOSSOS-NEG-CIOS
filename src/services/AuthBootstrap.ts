@@ -56,16 +56,6 @@ async function profileForAuthUser(authUser: any): Promise<User> {
 }
 
 export function installRealSupabaseAuth() {
-  const original = {
-    signUp: DataService.signUp,
-    signIn: DataService.signIn,
-    signOut: DataService.signOut,
-    getCurrentSessionUser: DataService.getCurrentSessionUser,
-    resetPassword: DataService.resetPassword,
-    updatePassword: DataService.updatePassword,
-    updateEmail: DataService.updateEmail,
-  };
-
   DataService.signUp = async (name, email, phone, password, accountType, extraMeta = {}) => {
     const cleanEmail = email.trim().toLowerCase();
     const { data, error } = await supabase.auth.signUp({
@@ -84,10 +74,7 @@ export function installRealSupabaseAuth() {
 
     if (error) throw new Error(error.message);
     if (!data.user) throw new Error('Não foi possível criar a conta.');
-
-    const user = await profileForAuthUser(data.user);
-    localStorage.setItem('nossosneg_session_user_id', user.id);
-    return user;
+    return profileForAuthUser(data.user);
   };
 
   DataService.signIn = async (email, password) => {
@@ -105,14 +92,11 @@ export function installRealSupabaseAuth() {
       await supabase.auth.signOut();
       throw new Error('A sua conta encontra-se suspensa.');
     }
-
-    localStorage.setItem('nossosneg_session_user_id', user.id);
     return user;
   };
 
   DataService.signOut = async () => {
     const { error } = await supabase.auth.signOut();
-    localStorage.removeItem('nossosneg_session_user_id');
     if (error) throw error;
   };
 
@@ -142,7 +126,4 @@ export function installRealSupabaseAuth() {
     const { error } = await supabase.auth.updateUser({ email: email.trim().toLowerCase() });
     if (error) throw new Error(error.message);
   };
-
-  // Keep the original methods reachable for rollback during development.
-  void original;
 }
